@@ -22,6 +22,37 @@ const SECTIONS = [
   ['Campaigns', FolderPlus],
 ];
 const PAGE_KEY = 'whatdbag.page';
+const MOBILE_QUERY = '(max-width: 900px)';
+const EDGE = 40; // px from the left edge where an opening swipe may start
+const SWIPE = 60; // horizontal distance that counts as a swipe
+
+// Mobile only: swipe right from the left edge opens the menu, swipe left closes it.
+function useSwipeMenu(open, setOpen) {
+  useEffect(() => {
+    let start = null;
+    const onStart = (e) => {
+      if (e.touches.length !== 1 || !window.matchMedia(MOBILE_QUERY).matches) return;
+      const { clientX: x, clientY: y } = e.touches[0];
+      start = open || x <= EDGE ? { x, y } : null;
+    };
+    const onEnd = (e) => {
+      if (!start) return;
+      const { clientX, clientY } = e.changedTouches[0];
+      const dx = clientX - start.x;
+      const dy = Math.abs(clientY - start.y);
+      start = null;
+      if (Math.abs(dx) < SWIPE || dy > Math.abs(dx)) return; // too short or mostly vertical
+      if (!open && dx > 0) setOpen(true);
+      if (open && dx < 0) setOpen(false);
+    };
+    window.addEventListener('touchstart', onStart, { passive: true });
+    window.addEventListener('touchend', onEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onStart);
+      window.removeEventListener('touchend', onEnd);
+    };
+  }, [open, setOpen]);
+}
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -76,6 +107,8 @@ function Studio({ session }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [menuOpen]);
+
+  useSwipeMenu(menuOpen, setMenuOpen);
 
   if (!data) {
     return (
