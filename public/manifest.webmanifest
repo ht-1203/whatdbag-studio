@@ -1,0 +1,9 @@
+{
+  "name": "whatdbag Studio",
+  "short_name": "whatdbag",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#211e1c",
+  "theme_color": "#1c1b1a",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
