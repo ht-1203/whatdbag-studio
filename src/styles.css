@@ -135,7 +135,9 @@ code { background: var(--chip-bg); padding: 2px 5px; border-radius: 4px; }
   color: #fff;
   position: fixed;
   inset: 0 auto 0 0;
-  padding: 29px 18px;
+  /* env() insets keep content clear of the iPhone notch and home bar when opened from the home screen. */
+  padding: calc(29px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   z-index: 20;
@@ -157,14 +159,14 @@ nav { display: grid; gap: 6px; }
 main { margin-left: 246px; width: calc(100% - 246px); }
 header {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 24px 45px; border-bottom: 1px solid var(--line); background: var(--surface-2);
+  padding: calc(24px + env(safe-area-inset-top)) 45px 24px; border-bottom: 1px solid var(--line); background: var(--surface-2);
   position: sticky; top: 0; z-index: 10;
 }
 .headTitle { flex: 1; min-width: 0; }
 header h2 { font-size: 26px; margin: 4px 0 0; letter-spacing: -0.7px; }
 .eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 2.3px; color: var(--faint); }
 .headerRight { display: flex; align-items: center; gap: 12px; }
-.content { padding: 34px 45px; max-width: 1450px; margin: auto; }
+.content { padding: 34px 45px calc(34px + env(safe-area-inset-bottom)); max-width: 1450px; margin: auto; }
 footer { font-size: 11px; color: var(--faint); padding: 36px 0 0; }
 
 /* Sync */
@@ -307,7 +309,7 @@ footer { font-size: 11px; color: var(--faint); padding: 36px 0 0; }
 .campaignCard small { font-size: 11px; color: var(--faint); font-weight: 700; letter-spacing: 0.06em; }
 
 /* Auth */
-.auth { min-height: 100vh; background: #211e1c; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: #fff; padding: 24px; }
+.auth { min-height: 100vh; background: #211e1c; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: #fff; padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom)); }
 .authCard { background: var(--card-bg); color: var(--ink); padding: 42px; max-width: 430px; width: 100%; border-radius: 16px; }
 .authBrand { font: 800 42px/1.15 Manrope; letter-spacing: -2px; margin: 14px 0; }
 .authCard form { display: grid; gap: 7px; }
@@ -397,9 +399,9 @@ html[lang='th'] :is(.eyebrow, label, .calDow, .reelTop, .campaignCard small) { l
   .backdrop { display: block; position: fixed; inset: 0; background: rgb(0 0 0 / 0.35); z-index: 15; }
   main { margin: 0; width: 100%; }
   .mobileMenu { display: inline-flex; border: 0; background: none; padding: 4px; color: var(--ink); }
-  header { padding: 14px 16px; }
+  header { padding: calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 14px calc(16px + env(safe-area-inset-left)); }
   header h2 { font-size: 21px; }
-  .content { padding: 20px 16px; }
+  .content { padding: 20px calc(16px + env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
   .hero { padding: 28px; }
   .metrics { grid-template-columns: repeat(2, 1fr); }
   .shotGrid, .reelsGrid, .campaignGrid { grid-template-columns: 1fr; }
