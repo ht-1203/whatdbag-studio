@@ -21,11 +21,6 @@ function readAuthRedirect() {
   const params = new URLSearchParams(`${window.location.hash.slice(1)}&${window.location.search.slice(1)}`);
   const error = params.get('error_description');
   if (error) return { ok: false, text: error.replace(/\+/g, ' ') };
-  const messages = {
-    signup: 'Email confirmed — welcome to whatdbag studio.',
-    email_change: 'Your new email address is confirmed.',
-    invite: 'Invitation accepted — welcome to whatdbag studio.',
-  };
-  const text = messages[params.get('type')];
-  return text ? { ok: true, text } : null;
+  const type = params.get('type');
+  return ['signup', 'email_change', 'invite'].includes(type) ? { ok: true, key: `notice.${type}` } : null;
 }

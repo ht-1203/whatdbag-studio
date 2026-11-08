@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { parseShotNumbers, pad2 } from '../lib/data';
+import { useI18n } from '../lib/i18n';
 
 const STYLES = ['Minimal Cinematic', 'Fashion Editorial', 'Soft Lifestyle', 'Product Detail', 'Street Documentary'];
 const DURATIONS = ['10', '15', '20', '30'];
 
+// The prompt stays in English whatever the UI language: AI editing tools follow it most reliably.
 function buildPrompt({ style, duration, reel, shots }) {
   const focus = reel
     ? ` The Reel is titled "${reel.title}". Use these planned shots in a sensible order:\n${shots
@@ -16,6 +18,7 @@ function buildPrompt({ style, duration, reel, shots }) {
 }
 
 export default function AIStudio({ campaign }) {
+  const { t } = useI18n();
   const [style, setStyle] = useState(STYLES[0]);
   const [duration, setDuration] = useState('15');
   const [reelId, setReelId] = useState('');
@@ -35,50 +38,46 @@ export default function AIStudio({ campaign }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      alert('Copy failed — select the text and copy it manually.');
+      alert(t('ai.copyFailed'));
     }
   }
 
   return (
     <>
-      <h3>AI Editing Prompt Generator</h3>
-      <p>Copy a prompt for a compatible AI editing tool. Actual video rendering happens in your chosen editor.</p>
+      <h3>{t('ai.title')}</h3>
+      <p>{t('ai.subtitle')}</p>
       <div className="panel">
         <div className="split three">
           <div>
-            <label htmlFor="ai-reel">REEL (OPTIONAL)</label>
+            <label htmlFor="ai-reel">{t('ai.reel')}</label>
             <select id="ai-reel" value={reelId} onChange={(e) => setReelId(e.target.value)}>
-              <option value="">Any — let the AI choose</option>
+              <option value="">{t('ai.anyReel')}</option>
               {campaign.reels.map((r, i) => <option key={r.id} value={r.id}>{pad2(i + 1)} · {r.title}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="ai-style">VISUAL STYLE</label>
+            <label htmlFor="ai-style">{t('ai.style')}</label>
             <select id="ai-style" value={style} onChange={(e) => setStyle(e.target.value)}>
               {STYLES.map((s) => <option key={s}>{s}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="ai-dur">DURATION</label>
+            <label htmlFor="ai-dur">{t('ai.duration')}</label>
             <select id="ai-dur" value={duration} onChange={(e) => setDuration(e.target.value)}>
-              {DURATIONS.map((s) => <option key={s} value={s}>{s} seconds</option>)}
+              {DURATIONS.map((s) => <option key={s} value={s}>{t('ai.seconds', { n: s })}</option>)}
             </select>
           </div>
         </div>
-        <textarea className="prompt" readOnly rows={10} value={prompt} aria-label="Generated prompt" />
+        <textarea className="prompt" readOnly rows={10} value={prompt} aria-label={t('ai.prompt')} />
+        <p className="fine">{t('ai.englishNote')}</p>
         <button className="primary compact" onClick={copy}>
-          {copied ? <><Check size={16} /> Copied</> : <><Copy size={16} /> Copy prompt</>}
+          {copied ? <><Check size={16} /> {t('ai.copied')}</> : <><Copy size={16} /> {t('ai.copy')}</>}
         </button>
       </div>
       <div className="panel">
-        <h3>Editing workflow</h3>
+        <h3>{t('ai.workflow')}</h3>
         <ol className="steps">
-          <li>Group footage by the Reel&apos;s shot numbers</li>
-          <li>Import to CapCut Auto Cut or a compatible editor</li>
-          <li>Review the AI draft</li>
-          <li>Verify real bag colors and logo</li>
-          <li>Export 1080×1920</li>
-          <li>Mark the Reel as Ready</li>
+          {[1, 2, 3, 4, 5, 6].map((n) => <li key={n}>{t(`ai.step${n}`)}</li>)}
         </ol>
       </div>
     </>

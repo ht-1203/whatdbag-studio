@@ -1,3 +1,5 @@
+import { normalizePrefs } from './prefs';
+
 export const SCHEMA_VERSION = 2;
 
 export const REEL_STATUSES = ['Idea', 'Filming', 'Editing', 'Ready', 'Scheduled', 'Published'];
@@ -56,17 +58,19 @@ export const duplicateCampaign = (c) => ({
   reels: c.reels.map((r) => ({ ...r, id: uid(), status: 'Idea', date: '' })),
 });
 
-export const emptyStudio = () => {
+export const emptyStudio = (settings) => {
   const c = makeCampaign();
-  return { version: SCHEMA_VERSION, campaigns: [c], active: c.id };
+  return { version: SCHEMA_VERSION, campaigns: [c], active: c.id, settings: normalizePrefs(settings) };
 };
 
 const str = (v, fallback = '') => (typeof v === 'string' ? v : fallback);
 
 // Repairs anything loaded from the cloud or a backup file so the UI can trust its shape.
-export function normalizeStudio(raw) {
+// fallbackSettings is used when the data has no settings yet (new account, old backup).
+export function normalizeStudio(raw, fallbackSettings) {
+  const settings = normalizePrefs(raw?.settings ?? fallbackSettings);
   if (!raw || typeof raw !== 'object' || !Array.isArray(raw.campaigns) || raw.campaigns.length === 0) {
-    return emptyStudio();
+    return emptyStudio(settings);
   }
   const campaigns = raw.campaigns
     .filter((c) => c && typeof c === 'object')
@@ -90,9 +94,9 @@ export function normalizeStudio(raw) {
         caption: str(r?.caption),
       })),
     }));
-  if (campaigns.length === 0) return emptyStudio();
+  if (campaigns.length === 0) return emptyStudio(settings);
   const active = campaigns.some((c) => c.id === raw.active) ? raw.active : campaigns[0].id;
-  return { version: SCHEMA_VERSION, campaigns, active };
+  return { version: SCHEMA_VERSION, campaigns, active, settings };
 }
 
 // "1, 3-5, 8" -> [1, 3, 4, 5, 8] (1-based shot numbers)

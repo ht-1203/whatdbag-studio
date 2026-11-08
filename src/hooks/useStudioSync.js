@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase, TABLE } from '../lib/supabase';
 import { normalizeStudio } from '../lib/data';
+import { loadLocalPrefs } from '../lib/prefs';
 
 const SAVE_DELAY = 700;
 
@@ -40,7 +41,7 @@ export function useStudioSync(userId) {
   const applyRow = useCallback((row) => {
     seenVersion.current = row?.updated_at ?? null;
     dirty.current = !row; // brand-new account: save the starter campaign
-    setDataState(normalizeStudio(row?.payload));
+    setDataState(normalizeStudio(row?.payload, loadLocalPrefs()));
     setStatus(row ? 'synced' : 'saving');
     setMessage('');
     if (!row) setRev((r) => r + 1);

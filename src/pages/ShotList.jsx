@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Plus, Trash2, Search } from 'lucide-react';
 import { DEFAULT_GROUPS, makeShot, pad2 } from '../lib/data';
+import { useI18n, groupLabel } from '../lib/i18n';
 import ProgressBar from '../components/ProgressBar';
 
 export default function ShotList({ campaign, update }) {
+  const { t } = useI18n();
   const [filter, setFilter] = useState('All');
   const [query, setQuery] = useState('');
   const [newTitle, setNewTitle] = useState('');
@@ -30,18 +32,20 @@ export default function ShotList({ campaign, update }) {
   }
 
   function removeShot(s, number) {
-    if (!confirm(`Delete shot ${pad2(number)} “${s.title}”? Reels that reference shot numbers after it will shift.`)) return;
+    if (!confirm(t('shots.deleteConfirm', { n: pad2(number), title: s.title }))) return;
     update((c) => ({ ...c, shots: c.shots.filter((x) => x.id !== s.id) }));
   }
+
+  const filterLabel = (x) => (x === 'All' ? t('common.all') : x === 'Incomplete' ? t('shots.incomplete') : groupLabel(t, x));
 
   return (
     <>
       <div className="sectionHead">
         <div>
-          <h3>{total}-shot production checklist</h3>
-          <p>8–12 seconds per shot · 9:16 · Shoot 2 takes where possible</p>
+          <h3>{t('shots.title', { n: total })}</h3>
+          <p>{t('shots.subtitle')}</p>
         </div>
-        <span className="count">{done}/{total} captured</span>
+        <span className="count">{t('shots.captured', { done, total })}</span>
       </div>
       <ProgressBar value={done} max={total} />
 
@@ -49,13 +53,13 @@ export default function ShotList({ campaign, update }) {
         <div className="filters">
           {['All', ...groups, 'Incomplete'].map((x) => (
             <button key={x} className={filter === x ? 'chip selected' : 'chip'} onClick={() => setFilter(x)}>
-              {x}
+              {filterLabel(x)}
             </button>
           ))}
         </div>
         <div className="searchBox">
           <Search size={15} />
-          <input placeholder="Search shots or notes" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search shots" />
+          <input placeholder={t('shots.search')} value={query} onChange={(e) => setQuery(e.target.value)} aria-label={t('shots.search')} />
         </div>
       </div>
 
@@ -69,31 +73,31 @@ export default function ShotList({ campaign, update }) {
                   <span className="shotNo">{pad2(i + 1)}</span>
                   <span>{s.title}</span>
                 </label>
-                <button className="iconBtn" title="Delete shot" aria-label={`Delete shot ${i + 1}`} onClick={() => removeShot(s, i + 1)}>
+                <button className="iconBtn" title={t('shots.delete')} aria-label={t('shots.delete')} onClick={() => removeShot(s, i + 1)}>
                   <Trash2 size={14} />
                 </button>
               </div>
-              <small>{s.group}</small>
+              <small>{groupLabel(t, s.group)}</small>
               <input
-                placeholder="Notes / location / file name"
+                placeholder={t('shots.notes')}
                 value={s.notes}
                 onChange={(e) => editShot(s.id, { notes: e.target.value })}
-                aria-label={`Notes for shot ${i + 1}`}
+                aria-label={t('shots.notes')}
               />
             </div>
           ) : null,
         )}
       </div>
-      {!campaign.shots.some(visible) && <p className="empty">No shots match this filter.</p>}
+      {!campaign.shots.some(visible) && <p className="empty">{t('shots.noMatch')}</p>}
 
       <form className="panel addShot" onSubmit={addShot}>
-        <h3>Add a shot</h3>
+        <h3>{t('shots.addTitle')}</h3>
         <div className="addRow">
-          <select value={newGroup} onChange={(e) => setNewGroup(e.target.value)} aria-label="Shot group">
-            {groups.map((g) => <option key={g}>{g}</option>)}
+          <select value={newGroup} onChange={(e) => setNewGroup(e.target.value)} aria-label={t('shots.group')}>
+            {groups.map((g) => <option key={g} value={g}>{groupLabel(t, g)}</option>)}
           </select>
-          <input placeholder="Describe the shot" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} aria-label="Shot description" />
-          <button className="primary compact" type="submit"><Plus size={16} /> Add</button>
+          <input placeholder={t('shots.describe')} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} aria-label={t('shots.describe')} />
+          <button className="primary compact" type="submit"><Plus size={16} /> {t('common.add')}</button>
         </div>
       </form>
     </>

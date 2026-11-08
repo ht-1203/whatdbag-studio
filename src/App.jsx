@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
-  LayoutDashboard, Camera, Clapperboard, CalendarDays, WandSparkles, FolderPlus, LogOut, Plus, Download, Menu, X,
+  LayoutDashboard, Camera, Clapperboard, CalendarDays, WandSparkles, FolderPlus, Settings as SettingsIcon,
+  LogOut, Plus, Download, Menu, X,
 } from 'lucide-react';
 import { supabase, authRedirect } from './lib/supabase';
+import { I18nProvider, useI18n } from './lib/i18n';
+import { applyTheme, loadLocalPrefs, saveLocalPrefs } from './lib/prefs';
+import { exportBackup } from './lib/backup';
 import { useStudioSync } from './hooks/useStudioSync';
 import { AuthScreen, NewPasswordScreen, SetupScreen } from './components/Auth';
 import SyncBadge from './components/SyncBadge';
@@ -12,7 +16,8 @@ import ShotList from './pages/ShotList';
 import ReelsPlanner from './pages/ReelsPlanner';
 import Calendar from './pages/Calendar';
 import AIStudio from './pages/AIStudio';
-import Campaigns, { exportBackup } from './pages/Campaigns';
+import Campaigns from './pages/Campaigns';
+import Settings from './pages/Settings';
 
 const SECTIONS = [
   ['Dashboard', LayoutDashboard],
@@ -56,6 +61,28 @@ function useSwipeMenu(open, setOpen) {
 }
 
 export default function App() {
+  const [prefs, setPrefs] = useState(loadLocalPrefs);
+
+  useEffect(() => {
+    applyTheme(prefs.theme);
+    document.documentElement.lang = prefs.lang;
+    saveLocalPrefs(prefs);
+    if (prefs.theme !== 'system') return;
+    // Follow the OS switching between light and dark while the app is open.
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => applyTheme('system');
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [prefs]);
+
+  return (
+    <I18nProvider lang={prefs.lang}>
+      <Root prefs={prefs} setPrefs={setPrefs} />
+    </I18nProvider>
+  );
+}
+
+function Root({ prefs, setPrefs }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [recovering, setRecovering] = useState(false);
@@ -76,22 +103,30 @@ export default function App() {
   if (!supabase) return <SetupScreen />;
   if (loading) return <div className="auth"><div className="spinner" aria-label="Loading" /></div>;
   if (recovering) return <NewPasswordScreen onDone={() => setRecovering(false)} />;
-  if (!session) return <AuthScreen notice={authRedirect} />;
-  return <Studio session={session} notice={authRedirect} />;
+  if (!session) return <AuthScreen notice={authRedirect} prefs={prefs} setPrefs={setPrefs} />;
+  return <Studio session={session} notice={authRedirect} prefs={prefs} setPrefs={setPrefs} />;
 }
 
-function Studio({ session, notice }) {
+function Studio({ session, notice, prefs, setPrefs }) {
+  const { t } = useI18n();
   const sync = useStudioSync(session.user.id);
   const { data, setData } = sync;
   const [page, setPageState] = useState(() => {
+    if (prefs.startPage !== 'last') return prefs.startPage;
     try {
       const saved = localStorage.getItem(PAGE_KEY);
-      return SECTIONS.some(([n]) => n === saved) ? saved : 'Dashboard';
+      return saved === 'Settings' || SECTIONS.some(([n]) => n === saved) ? saved : 'Dashboard';
     } catch {
       return 'Dashboard';
     }
   });
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // The synced settings are the source of truth once loaded (they may come from another device).
+  const settings = data?.settings;
+  useEffect(() => {
+    if (settings && JSON.stringify(settings) !== JSON.stringify(prefs)) setPrefs(settings);
+  }, [settings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const go = (p) => {
     setPageState(p);
@@ -115,8 +150,8 @@ function Studio({ session, notice }) {
     return (
       <div className="auth">
         <div className="spinner" aria-label="Loading" />
-        <p className="loadingText">{sync.status === 'error' ? sync.message : 'Loading your private studio…'}</p>
-        {sync.status === 'error' && <button className="lightButton" onClick={() => window.location.reload()}>Try again</button>}
+        <p className="loadingText">{sync.status === 'error' ? sync.message : t('app.loadingStudio')}</p>
+        {sync.status === 'error' && <button className="lightButton" onClick={() => window.location.reload()}>{t('app.tryAgain')}</button>}
       </div>
     );
   }
@@ -124,29 +159,29 @@ function Studio({ session, notice }) {
   const campaign = data.campaigns.find((c) => c.id === data.active) ?? data.campaigns[0];
   const update = (fn) =>
     setData((d) => ({ ...d, campaigns: d.campaigns.map((c) => (c.id === d.active ? fn(c) : c)) }));
-  const props = { campaign, update, go, data, setData };
+  const props = { campaign, update, go, data, setData, session };
+  const navButton = (name, Icon) => (
+    <button key={name} className={page === name ? 'nav active' : 'nav'} aria-current={page === name ? 'page' : undefined} onClick={() => go(name)}>
+      <Icon size={18} />
+      {t(`nav.${name}`)}
+    </button>
+  );
 
   return (
     <div className="shell">
-      {notice && <Toast {...notice} />}
-      <aside className={menuOpen ? 'sidebar open' : 'sidebar'} aria-label="Main navigation">
+      {notice && <Toast ok={notice.ok} text={notice.key ? t(notice.key) : notice.text} />}
+      <aside className={menuOpen ? 'sidebar open' : 'sidebar'} aria-label={t('app.mainNav')}>
         <div className="brand">
           whatdbag<span>.</span>
           <small>STUDIO / PRIVATE</small>
         </div>
-        <nav>
-          {SECTIONS.map(([name, Icon]) => (
-            <button key={name} className={page === name ? 'nav active' : 'nav'} aria-current={page === name ? 'page' : undefined} onClick={() => go(name)}>
-              <Icon size={18} />
-              {name}
-            </button>
-          ))}
-        </nav>
+        <nav>{SECTIONS.map(([name, Icon]) => navButton(name, Icon))}</nav>
         <div className="sidebottom">
+          {navButton('Settings', SettingsIcon)}
           <div className="tiny">{session.user.email}</div>
           <button className="nav" onClick={() => supabase.auth.signOut()}>
             <LogOut size={17} />
-            Sign out
+            {t('app.signOut')}
           </button>
         </div>
       </aside>
@@ -154,29 +189,31 @@ function Studio({ session, notice }) {
 
       <main>
         <header>
-          <button className="mobileMenu" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen}>
+          <button className="mobileMenu" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? t('app.closeMenu') : t('app.openMenu')} aria-expanded={menuOpen}>
             {menuOpen ? <X /> : <Menu />}
           </button>
           <div className="headTitle">
-            <div className="eyebrow">CONTENT OPERATIONS</div>
-            <h2>{page}</h2>
+            <div className="eyebrow">{t('app.eyebrow')}</div>
+            <h2>{t(`nav.${page}`)}</h2>
           </div>
           <div className="headerRight">
             <SyncBadge sync={sync} />
             <button className="secondary small hideMobile" onClick={() => exportBackup(data)}>
-              <Download size={15} /> Backup
+              <Download size={15} /> {t('app.backup')}
             </button>
           </div>
         </header>
 
         <div className="content">
-          <div className="campaignBar">
-            <label htmlFor="active-campaign">ACTIVE CAMPAIGN</label>
-            <select id="active-campaign" value={campaign.id} onChange={(e) => setData((d) => ({ ...d, active: e.target.value }))}>
-              {data.campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <button className="secondary small" onClick={() => go('Campaigns')}><Plus size={15} /> New</button>
-          </div>
+          {page !== 'Settings' && (
+            <div className="campaignBar">
+              <label htmlFor="active-campaign">{t('app.activeCampaign')}</label>
+              <select id="active-campaign" value={campaign.id} onChange={(e) => setData((d) => ({ ...d, active: e.target.value }))}>
+                {data.campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <button className="secondary small" onClick={() => go('Campaigns')}><Plus size={15} /> {t('app.new')}</button>
+            </div>
+          )}
 
           {page === 'Dashboard' && <Dashboard {...props} campaignCount={data.campaigns.length} />}
           {page === 'Shot List' && <ShotList key={campaign.id} {...props} />}
@@ -184,8 +221,9 @@ function Studio({ session, notice }) {
           {page === 'Calendar' && <Calendar {...props} />}
           {page === 'AI Studio' && <AIStudio key={campaign.id} {...props} />}
           {page === 'Campaigns' && <Campaigns {...props} />}
+          {page === 'Settings' && <Settings {...props} />}
 
-          <footer>whatdbag studio · Private content operations · Cloud sync enabled</footer>
+          <footer>{t('app.footer')}</footer>
         </div>
       </main>
     </div>

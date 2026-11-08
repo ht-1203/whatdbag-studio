@@ -12,6 +12,7 @@ A private, responsive web app for planning whatdbag content shoots: a reusable s
 - **Campaigns**: create, rename, duplicate and delete campaigns, and back up to or restore from a JSON file (merge or replace).
 - **Safe cloud sync**: debounced autosave and a clear Saving, Synced or Not saved status with a retry button. It detects when another device changed the data first and asks which version to keep, so nothing is silently overwritten. It also warns before you close the tab with unsaved changes and pulls the latest data when you return to the tab.
 - **Accounts**: email and password sign-in, password reset by email, and an optional switch to hide sign-up.
+- **Settings**: light, dark or system theme; English or Thai; first day of the week; the page to open on; change password; sign out of all devices; backup, restore and delete-all; install steps; privacy and terms. Settings sync across your devices.
 - **Installable**: add it to your iPhone home screen for an app-like experience.
 
 ## Project structure

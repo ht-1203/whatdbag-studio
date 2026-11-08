@@ -1,28 +1,24 @@
-const LABELS = {
-  loading: 'Loading…',
-  saving: 'Saving…',
-  synced: 'Synced',
-  error: 'Not saved',
-  conflict: 'Conflict',
-};
+import { useI18n } from '../lib/i18n';
 
 export default function SyncBadge({ sync }) {
+  const { t } = useI18n();
   const { status, message, retry, keepMine, takeTheirs } = sync;
+  const label = t(`sync.${status}`);
   return (
     <div className="syncWrap">
-      <span className={`sync ${status}`} title={message || LABELS[status]} role="status">
+      <span className={`sync ${status}`} title={message || label} role="status">
         <span className="dot" />
-        {LABELS[status]}
+        {label}
       </span>
       {status === 'error' && (
-        <button className="secondary small" onClick={retry}>Retry</button>
+        <button className="secondary small" onClick={retry}>{t('sync.retry')}</button>
       )}
       {status === 'conflict' && (
         <div className="conflict" role="alert">
-          <p>{message} Which version do you want to keep?</p>
+          <p>{t('sync.conflictText')}</p>
           <div className="actions">
-            <button className="secondary small" onClick={takeTheirs}>Load other device</button>
-            <button className="primary small" onClick={keepMine}>Keep this device</button>
+            <button className="secondary small" onClick={takeTheirs}>{t('sync.loadOther')}</button>
+            <button className="primary small" onClick={keepMine}>{t('sync.keepMine')}</button>
           </div>
         </div>
       )}
