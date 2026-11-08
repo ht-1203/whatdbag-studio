@@ -41,7 +41,7 @@ export function AuthScreen() {
     let res;
     if (mode === 'signin') res = await supabase.auth.signInWithPassword({ email, password });
     else if (mode === 'signup') res = await supabase.auth.signUp({ email, password });
-    else res = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    else res = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + import.meta.env.BASE_URL });
     setBusy(false);
     if (res.error) return setMsg({ text: res.error.message, ok: false });
     if (mode === 'signup') setMsg({ text: 'Account created. Check your email if confirmation is enabled.', ok: true });

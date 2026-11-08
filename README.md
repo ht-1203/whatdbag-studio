@@ -61,6 +61,15 @@ Import this repository into Vercel, choose the **Vite** framework preset (build 
 
 Netlify and Cloudflare Pages work the same way.
 
+## Deploy (GitHub Pages)
+
+The repository includes `.github/workflows/pages.yml`, which builds and publishes the site to `https://<user>.github.io/<repo>/` on every push to `main`.
+
+1. Go to **Settings → Pages** and set **Source** to **GitHub Actions**.
+2. Go to **Settings → Secrets and variables → Actions → Variables** and add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and optionally `VITE_ALLOW_SIGNUP`. The anon key is designed to be public, and RLS protects the data.
+3. Re-run the workflow from the **Actions** tab, or push a commit.
+4. In Supabase, add the Pages URL to the Site URL and Redirect URLs.
+
 ## Privacy and limits
 
 - The login page is public, but campaign data is private to each account through Supabase RLS. The site also tells search engines not to index it.
