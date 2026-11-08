@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import {
   LayoutDashboard, Camera, Clapperboard, CalendarDays, WandSparkles, FolderPlus, LogOut, Plus, Download, Menu, X,
 } from 'lucide-react';
-import { supabase } from './lib/supabase';
+import { supabase, authRedirect } from './lib/supabase';
 import { useStudioSync } from './hooks/useStudioSync';
 import { AuthScreen, NewPasswordScreen, SetupScreen } from './components/Auth';
 import SyncBadge from './components/SyncBadge';
+import Toast from './components/Toast';
 import Dashboard from './pages/Dashboard';
 import ShotList from './pages/ShotList';
 import ReelsPlanner from './pages/ReelsPlanner';
@@ -75,11 +76,11 @@ export default function App() {
   if (!supabase) return <SetupScreen />;
   if (loading) return <div className="auth"><div className="spinner" aria-label="Loading" /></div>;
   if (recovering) return <NewPasswordScreen onDone={() => setRecovering(false)} />;
-  if (!session) return <AuthScreen />;
-  return <Studio session={session} />;
+  if (!session) return <AuthScreen notice={authRedirect} />;
+  return <Studio session={session} notice={authRedirect} />;
 }
 
-function Studio({ session }) {
+function Studio({ session, notice }) {
   const sync = useStudioSync(session.user.id);
   const { data, setData } = sync;
   const [page, setPageState] = useState(() => {
@@ -127,6 +128,7 @@ function Studio({ session }) {
 
   return (
     <div className="shell">
+      {notice && <Toast {...notice} />}
       <aside className={menuOpen ? 'sidebar open' : 'sidebar'} aria-label="Main navigation">
         <div className="brand">
           whatdbag<span>.</span>

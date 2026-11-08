@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase, allowSignup } from '../lib/supabase';
+import { supabase, allowSignup, appUrl } from '../lib/supabase';
 
 export function Brand() {
   return (
@@ -27,12 +27,15 @@ export function SetupScreen() {
   );
 }
 
-export function AuthScreen() {
+export function AuthScreen({ notice }) {
   const [mode, setMode] = useState('signin'); // signin | signup | reset
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState({ text: '', ok: false });
+  // A confirmed email that didn't sign this browser in (e.g. opened elsewhere) still gets a clear answer.
+  const [msg, setMsg] = useState(
+    notice?.ok ? { text: `${notice.text} Please sign in.`, ok: true } : notice ?? { text: '', ok: false },
+  );
 
   async function submit(e) {
     e.preventDefault();
@@ -40,8 +43,8 @@ export function AuthScreen() {
     setMsg({ text: '', ok: false });
     let res;
     if (mode === 'signin') res = await supabase.auth.signInWithPassword({ email, password });
-    else if (mode === 'signup') res = await supabase.auth.signUp({ email, password });
-    else res = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + import.meta.env.BASE_URL });
+    else if (mode === 'signup') res = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: appUrl } });
+    else res = await supabase.auth.resetPasswordForEmail(email, { redirectTo: appUrl });
     setBusy(false);
     if (res.error) return setMsg({ text: res.error.message, ok: false });
     if (mode === 'signup') setMsg({ text: 'Account created. Check your email if confirmation is enabled.', ok: true });
