@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  LayoutDashboard, Camera, Clapperboard, CalendarDays, WandSparkles, FolderPlus, Settings as SettingsIcon,
+  LayoutDashboard, Camera, Clapperboard, CalendarDays, WandSparkles, FolderPlus, MessageCircle, Settings as SettingsIcon,
   LogOut, Plus, Download, Menu, X,
 } from 'lucide-react';
 import { supabase, authRedirect } from './lib/supabase';
@@ -8,6 +8,7 @@ import { I18nProvider, useI18n } from './lib/i18n';
 import { applyTheme, loadLocalPrefs, saveLocalPrefs } from './lib/prefs';
 import { exportBackup } from './lib/backup';
 import { useStudioSync } from './hooks/useStudioSync';
+import { useTeamChat } from './hooks/useTeamChat';
 import { AuthScreen, NewPasswordScreen, SetupScreen } from './components/Auth';
 import SyncBadge from './components/SyncBadge';
 import Toast from './components/Toast';
@@ -18,6 +19,7 @@ import Calendar from './pages/Calendar';
 import AIStudio from './pages/AIStudio';
 import Campaigns from './pages/Campaigns';
 import Settings from './pages/Settings';
+import Chat from './pages/Chat';
 
 const SECTIONS = [
   ['Dashboard', LayoutDashboard],
@@ -26,6 +28,7 @@ const SECTIONS = [
   ['Calendar', CalendarDays],
   ['AI Studio', WandSparkles],
   ['Campaigns', FolderPlus],
+  ['Chat', MessageCircle],
 ];
 const PAGE_KEY = 'whatdbag.page';
 const MOBILE_QUERY = '(max-width: 900px)';
@@ -58,6 +61,16 @@ function useSwipeMenu(open, setOpen) {
       window.removeEventListener('touchend', onEnd);
     };
   }, [open, setOpen]);
+}
+
+function usePageVisible() {
+  const [visible, setVisible] = useState(() => document.visibilityState === 'visible');
+  useEffect(() => {
+    const onChange = () => setVisible(document.visibilityState === 'visible');
+    document.addEventListener('visibilitychange', onChange);
+    return () => document.removeEventListener('visibilitychange', onChange);
+  }, []);
+  return visible;
 }
 
 export default function App() {
@@ -121,6 +134,13 @@ function Studio({ session, notice, prefs, setPrefs }) {
     }
   });
   const [menuOpen, setMenuOpen] = useState(false);
+  const visible = usePageVisible();
+  const chat = useTeamChat(session, page === 'Chat' && visible);
+
+  // Show unread chat messages in the browser tab and home-screen app title.
+  useEffect(() => {
+    document.title = chat.unread ? `(${chat.unread}) whatdbag Studio` : 'whatdbag Studio';
+  }, [chat.unread]);
 
   // The synced settings are the source of truth once loaded (they may come from another device).
   const settings = data?.settings;
@@ -164,6 +184,7 @@ function Studio({ session, notice, prefs, setPrefs }) {
     <button key={name} className={page === name ? 'nav active' : 'nav'} aria-current={page === name ? 'page' : undefined} onClick={() => go(name)}>
       <Icon size={18} />
       {t(`nav.${name}`)}
+      {name === 'Chat' && chat.unread > 0 && <span className="navBadge">{chat.unread > 99 ? '99+' : chat.unread}</span>}
     </button>
   );
 
@@ -205,7 +226,7 @@ function Studio({ session, notice, prefs, setPrefs }) {
         </header>
 
         <div className="content">
-          {page !== 'Settings' && (
+          {page !== 'Settings' && page !== 'Chat' && (
             <div className="campaignBar">
               <label htmlFor="active-campaign">{t('app.activeCampaign')}</label>
               <select id="active-campaign" value={campaign.id} onChange={(e) => setData((d) => ({ ...d, active: e.target.value }))}>
@@ -222,8 +243,9 @@ function Studio({ session, notice, prefs, setPrefs }) {
           {page === 'AI Studio' && <AIStudio key={campaign.id} {...props} />}
           {page === 'Campaigns' && <Campaigns {...props} />}
           {page === 'Settings' && <Settings {...props} />}
+          {page === 'Chat' && <Chat chat={chat} />}
 
-          <footer>{t('app.footer')}</footer>
+          {page !== 'Chat' && <footer>{t('app.footer')}</footer>}
         </div>
       </main>
     </div>

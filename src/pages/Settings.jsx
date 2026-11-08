@@ -5,6 +5,7 @@ import { useI18n } from '../lib/i18n';
 import { PAGE_IDS } from '../lib/prefs';
 import { emptyStudio } from '../lib/data';
 import { exportBackup, mergeBackup, readBackup } from '../lib/backup';
+import { displayNameOf } from '../hooks/useTeamChat';
 import { version } from '../../package.json';
 
 const REPO_URL = 'https://github.com/ht-1203/whatdbag-studio';
@@ -49,6 +50,7 @@ export default function Settings({ data, setData, session }) {
         <Row label={t('settings.signedInAs')}>
           <span className="settingValue">{session.user.email}</span>
         </Row>
+        <DisplayName session={session} />
         <ChangePassword />
         <div className="settingActions">
           <button className="secondary small" onClick={() => supabase.auth.signOut()}><LogOut size={15} /> {t('app.signOut')}</button>
@@ -94,6 +96,7 @@ export default function Settings({ data, setData, session }) {
           <li>{t('terms.private')}</li>
           <li>{t('terms.stored')}</li>
           <li>{t('terms.notStored')}</li>
+          <li>{t('terms.chat')}</li>
           <li>{t('terms.backups')}</li>
           <li>{t('terms.asIs')}</li>
         </ul>
@@ -139,6 +142,44 @@ function Segmented({ value, onChange, options }) {
         </button>
       ))}
     </div>
+  );
+}
+
+// Shown to teammates in chat instead of the email address.
+function DisplayName({ session }) {
+  const { t } = useI18n();
+  const current = displayNameOf(session.user);
+  const [name, setName] = useState(current);
+  const [state, setState] = useState('idle'); // idle | saving | saved | error
+  const [err, setErr] = useState('');
+
+  async function save(e) {
+    e.preventDefault();
+    const clean = name.trim().slice(0, 40);
+    if (!clean || clean === current) return;
+    setState('saving');
+    const { error } = await supabase.auth.updateUser({ data: { display_name: clean } });
+    if (error) {
+      setErr(error.message);
+      return setState('error');
+    }
+    setState('saved');
+    setTimeout(() => setState('idle'), 2000);
+  }
+
+  return (
+    <form className="settingRow" onSubmit={save}>
+      <div>
+        <div className="settingLabel">{t('settings.displayName')}</div>
+        <div className="settingHint">{state === 'error' ? err : t('settings.displayNameHint')}</div>
+      </div>
+      <div className="settingControl nameControl">
+        <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} aria-label={t('settings.displayName')} required />
+        <button className="secondary small" type="submit" disabled={state === 'saving' || !name.trim() || name.trim() === current}>
+          {state === 'saved' ? t('settings.saved') : t('settings.save')}
+        </button>
+      </div>
+    </form>
   );
 }
 

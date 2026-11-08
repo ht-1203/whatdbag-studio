@@ -1,4 +1,4 @@
-export const PAGE_IDS = ['Dashboard', 'Shot List', 'Reels Planner', 'Calendar', 'AI Studio', 'Campaigns', 'Settings'];
+export const PAGE_IDS = ['Dashboard', 'Shot List', 'Reels Planner', 'Calendar', 'AI Studio', 'Campaigns', 'Chat', 'Settings'];
 export const THEMES = ['system', 'light', 'dark'];
 export const LANGS = ['en', 'th'];
 

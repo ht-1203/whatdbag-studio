@@ -12,6 +12,7 @@ A private, responsive web app for planning whatdbag content shoots: a reusable s
 - **Campaigns**: create, rename, duplicate and delete campaigns, and back up to or restore from a JSON file (merge or replace).
 - **Safe cloud sync**: debounced autosave and a clear Saving, Synced or Not saved status with a retry button. It detects when another device changed the data first and asks which version to keep, so nothing is silently overwritten. It also warns before you close the tab with unsaved changes and pulls the latest data when you return to the tab.
 - **Accounts**: email and password sign-in, password reset by email, and an optional switch to hide sign-up.
+- **Team chat**: one live room for everyone who can sign in, showing who's online, who's typing and an unread badge. You can delete your own messages, load older history, and links become clickable. Teammates see your display name, not your email. Run the latest `supabase.sql` to turn it on.
 - **Settings**: light, dark or system theme; English or Thai; first day of the week; the page to open on; change password; sign out of all devices; backup, restore and delete-all; install steps; privacy and terms. Settings sync across your devices.
 - **Installable**: add it to your iPhone home screen for an app-like experience.
 
@@ -33,7 +34,7 @@ supabase.sql             table + RLS policies (safe to re-run)
 ## Setup
 
 1. Create a **Supabase project** at https://supabase.com.
-2. In the Supabase **SQL Editor**, run [`supabase.sql`](supabase.sql).
+2. In the Supabase **SQL Editor**, run [`supabase.sql`](supabase.sql). It creates the private studio table and the team chat table. Re-run it after updates; it's safe to run more than once.
 3. Under **Authentication → Providers → Email**, enable email sign-in. Under **Authentication → URL Configuration**, set the Site URL and Redirect URLs to your deployed domain (and `http://localhost:5173` for local development). Password reset links need these settings.
 4. Copy the env file and fill in your project URL and **anon/publishable** key (never the service-role key):
 
@@ -76,4 +77,5 @@ The repository includes `.github/workflows/pages.yml`, which builds and publishe
 - The login page is public, but campaign data is private to each account through Supabase RLS. The site also tells search engines not to index it.
 - The app stores shot statuses, notes, Reel details, dates and captions as JSON. It does **not** upload video, edit footage, auto-post to Instagram, or send reminders.
 - Backup files contain private data, so store them somewhere secure.
+- Team chat is shared: everyone who can sign in can read it. Turn off new sign-ups once your team has accounts.
 - For extra protection, enable MFA in Supabase Authentication.
